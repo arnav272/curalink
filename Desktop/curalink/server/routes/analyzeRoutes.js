@@ -1,45 +1,51 @@
-const express  = require('express');
-const router   = express.Router();
-const axios    = require('axios');
+const express = require('express');
+const router = express.Router();
+const axios = require('axios');
 
-// ── LLM caller (mirrors llmService.js but with its own prompt) ───────────────
-const callOllama = async (prompt) => {
+// ── Groq LLM caller (fast, reliable) ─────────────────────────────────────────
+const callGroq = async (prompt) => {
   const response = await axios.post(
-    `${process.env.OLLAMA_BASE_URL}/api/chat`,
+    'https://api.groq.com/openai/v1/chat/completions',
     {
-      model: process.env.OLLAMA_MODEL || 'llama3.2',
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
-      stream: false,
-      options: { temperature: 0.2, num_predict: 2000 },
-    },
-    { timeout: 180000 }
-  );
-  return response.data?.message?.content || '';
-};
-
-const callHuggingFace = async (prompt) => {
-  const response = await axios.post(
-    process.env.HF_MODEL_URL,
-    {
-      inputs: prompt,
-      parameters: { max_new_tokens: 2000, temperature: 0.2, return_full_text: false },
+      temperature: 0.3,
+      max_tokens: 2000,
     },
     {
       headers: {
-        Authorization: `Bearer ${process.env.HF_API_TOKEN}`,
+        'Authorization': `Bearer ${process.env.GROQ_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      timeout: 180000,
+      timeout: 60000,
     }
   );
-  return response.data?.[0]?.generated_text || '';
+  return response.data?.choices?.[0]?.message?.content || '';
 };
 
 const callLLM = async (prompt) => {
-  const provider = process.env.LLM_PROVIDER || 'ollama';
+  const provider = process.env.LLM_PROVIDER || 'groq';
   console.log(`[LabAnalyzer] LLM provider: ${provider}`);
-  if (provider === 'ollama') return callOllama(prompt);
-  if (provider === 'huggingface') return callHuggingFace(prompt);
+  
+  if (provider === 'groq') {
+    return callGroq(prompt);
+  }
+  
+  // Fallback for other providers
+  if (provider === 'ollama') {
+    const response = await axios.post(
+      `${process.env.OLLAMA_BASE_URL}/api/chat`,
+      {
+        model: process.env.OLLAMA_MODEL || 'llama3.2',
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        options: { temperature: 0.2, num_predict: 2000 },
+      },
+      { timeout: 180000 }
+    );
+    return response.data?.message?.content || '';
+  }
+  
   throw new Error(`Unknown provider: ${provider}`);
 };
 
@@ -60,23 +66,20 @@ For each abnormal value found, list it as:
 If no abnormal values found, state "All values appear within normal ranges."
 
 **Health Implications**
-Explain in plain language what the abnormal values may indicate. Be specific but understandable to a non-medical person. If values are normal, provide a brief positive summary.
+Explain in plain language what the abnormal values may indicate. Be specific but understandable to a non-medical person.
 
 **Recommendations**
 List 3-5 concrete suggested actions:
 - Whether to consult a specialist (which type)
 - Whether to retest (how soon)
 - Lifestyle or dietary changes supported by the findings
-- Any urgent follow-up needed
 
 **Disclaimer**
-This is an AI-generated analysis for informational purposes only. It does not constitute medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider before making any medical decisions. In case of emergency, contact emergency services immediately.
+This is an AI-generated analysis for informational purposes only. Always consult a qualified healthcare provider.
 
 Be thorough, accurate, and professional. Use clear, patient-friendly language.`;
 
 // ── POST /api/analyze ─────────────────────────────────────────────────────────
-// Accepts JSON with { reportText, context }
-// Frontend extracts text from PDF/image before sending
 router.post('/', async (req, res) => {
   try {
     const { reportText, context } = req.body;
@@ -89,7 +92,7 @@ router.post('/', async (req, res) => {
 
     console.log(`[LabAnalyzer] Analyzing report (${reportText.length} chars)`);
 
-    const prompt   = buildAnalysisPrompt(reportText.trim(), context?.trim() || '');
+    const prompt = buildAnalysisPrompt(reportText.trim(), context?.trim() || '');
     const rawAnswer = await callLLM(prompt);
 
     if (!rawAnswer) {
