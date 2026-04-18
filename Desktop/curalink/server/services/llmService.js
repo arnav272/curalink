@@ -45,7 +45,6 @@ FORMATTING RULES:
 
 // ── User message builder ──────────────────────────────────────────────────────
 const buildUserMessage = (query, sources, conversationHistory) => {
-  // Format conversation history
   let historyBlock = '';
   if (conversationHistory && conversationHistory.length > 0) {
     historyBlock = `PREVIOUS CONVERSATION (for context — maintain this medical context):
@@ -54,7 +53,6 @@ ${conversationHistory.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n
 `;
   }
 
-  // Format sources
   const sourcesBlock = sources.length > 0
     ? sources.map((s, i) => `[Source ${i + 1}] ${s.platform} (${s.year})
 Title: ${s.title}
@@ -89,44 +87,28 @@ const callOllama = async (systemPrompt, userMessage) => {
   return response.data?.message?.content || 'No response generated';
 };
 
-// ── Hugging Face (FIXED) ──────────────────────────────────────────────────────
-const callHuggingFace = async (systemPrompt, userMessage) => {
-  // Combine system prompt and user message into one prompt
-  const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
-  
+// ── Groq (Fast & Reliable) ───────────────────────────────────────────────────
+const callGroq = async (systemPrompt, userMessage) => {
   const response = await axios.post(
-    process.env.HF_MODEL_URL,
+    'https://api.groq.com/openai/v1/chat/completions',
     {
-      inputs: fullPrompt,
-      parameters: {
-        max_new_tokens: 2000,
-        temperature: 0.2,
-        do_sample: true,
-        return_full_text: false
-      },
+      model: 'mixtral-8x7b-32768',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.2,
+      max_tokens: 2000,
     },
     {
       headers: {
-        Authorization: `Bearer ${process.env.HF_API_TOKEN}`,
+        'Authorization': `Bearer ${process.env.GROQ_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      timeout: 120000,
+      timeout: 60000,
     }
   );
-  
-  // Handle different response formats
-  let generatedText = '';
-  if (response.data && Array.isArray(response.data) && response.data[0]?.generated_text) {
-    generatedText = response.data[0].generated_text;
-  } else if (response.data?.generated_text) {
-    generatedText = response.data.generated_text;
-  } else if (typeof response.data === 'string') {
-    generatedText = response.data;
-  } else {
-    generatedText = 'No response generated';
-  }
-  
-  return generatedText;
+  return response.data?.choices?.[0]?.message?.content || 'No response generated';
 };
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -141,8 +123,8 @@ const generateLLMResponse = async (query, sources, conversationHistory = [], pat
     let answer;
     if (provider === 'ollama') {
       answer = await callOllama(systemPrompt, userMessage);
-    } else if (provider === 'huggingface') {
-      answer = await callHuggingFace(systemPrompt, userMessage);
+    } else if (provider === 'groq') {
+      answer = await callGroq(systemPrompt, userMessage);
     } else {
       throw new Error(`Unknown LLM provider: ${provider}`);
     }
