@@ -22,51 +22,31 @@ CRITICAL CONTEXT RULES (follow strictly):
 MANDATORY OUTPUT FORMAT — Always use this exact structure:
 
 ## Condition Overview
-[2-3 sentences about ${disease} relevant to the user's specific question. Connect follow-up questions back to ${disease}.]
+[2-3 sentences about ${disease} relevant to the user's specific question]
 
 ## Research Insights
-[4-6 numbered insights drawn ONLY from the provided sources. Each must end with its citation like [Source 1].
-Format: "1. **Key finding**: Detailed explanation [Source N]."
-If sources are insufficient, state the evidence gap clearly.]
+[4-6 numbered insights drawn ONLY from the provided sources. Each must end with its citation like [Source 1]]
 
 ## Clinical Trials
-[List trials from sources relevant to ${disease}. Include recruiting status, location if available.
-If none found: show the friendly no-trials message.]
+[List trials from sources relevant to ${disease}. Include recruiting status, location if available]
 
 ## Summary
-[2-3 sentence actionable conclusion. Reference ${disease} explicitly. Suggest next steps the patient can take.]
+[2-3 sentence actionable conclusion]`;
 
-FORMATTING RULES:
-- Use citation markers [Source N] that match the numbered sources provided
-- Be precise and evidence-based, never speculative
-- Write at a level a patient can understand, not just clinicians
-- Always refer back to ${disease} even in follow-up answers`;
 };
 
 // ── User message builder ──────────────────────────────────────────────────────
 const buildUserMessage = (query, sources, conversationHistory) => {
   let historyBlock = '';
   if (conversationHistory && conversationHistory.length > 0) {
-    historyBlock = `PREVIOUS CONVERSATION (for context — maintain this medical context):
-${conversationHistory.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}
-
-`;
+    historyBlock = `Previous conversation:\n${conversationHistory.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}\n\n`;
   }
 
   const sourcesBlock = sources.length > 0
-    ? sources.map((s, i) => `[Source ${i + 1}] ${s.platform} (${s.year})
-Title: ${s.title}
-Authors: ${s.authors}
-Abstract: ${s.snippet}
-URL: ${s.url}`).join('\n\n')
+    ? sources.map((s, i) => `[Source ${i + 1}] ${s.platform} (${s.year})\nTitle: ${s.title}\nAuthors: ${s.authors}\nAbstract: ${s.snippet}\nURL: ${s.url}`).join('\n\n')
     : 'No relevant sources retrieved for this query.';
 
-  return `${historyBlock}CURRENT USER QUESTION: ${query}
-
-RESEARCH SOURCES (use ONLY these for your answer — do not use general knowledge if sources are insufficient):
-${sourcesBlock}
-
-Analyze these sources and respond in the required structured format. If the sources don't address the question well, say so explicitly.`;
+  return `${historyBlock}Current question: ${query}\n\nResearch sources (use ONLY these):\n${sourcesBlock}\n\nProvide a structured answer with citations.`;
 };
 
 // ── Ollama ────────────────────────────────────────────────────────────────────
@@ -87,28 +67,33 @@ const callOllama = async (systemPrompt, userMessage) => {
   return response.data?.message?.content || 'No response generated';
 };
 
-// ── Groq (Fast & Reliable) ───────────────────────────────────────────────────
+// ── Groq API ──────────────────────────────────────────────────────────────────
 const callGroq = async (systemPrompt, userMessage) => {
-  const response = await axios.post(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      model: 'mixtral-8x7b-32768',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.2,
-      max_tokens: 2000,
-    },
-    {
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_TOKEN}`,
-        'Content-Type': 'application/json',
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt.substring(0, 3000) },
+          { role: 'user', content: userMessage.substring(0, 4000) }
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
       },
-      timeout: 60000,
-    }
-  );
-  return response.data?.choices?.[0]?.message?.content || 'No response generated';
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.GROQ_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 60000,
+      }
+    );
+    return response.data?.choices?.[0]?.message?.content || 'No response generated';
+  } catch (error) {
+    console.error('Groq API Error:', error.response?.data || error.message);
+    throw error;
+  }
 };
 
 // ── Main export ───────────────────────────────────────────────────────────────
