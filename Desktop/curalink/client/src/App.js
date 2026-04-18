@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
+import LandingPage   from './pages/LandingPage';
 import AssistantPage from './pages/AssistantPage';
+import AnalyzePage   from './pages/AnalyzePage';
 import './App.css';
 
 function App() {
@@ -17,8 +18,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"    element={<LandingPage   theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/app" element={<AssistantPage theme={theme} toggleTheme={toggleTheme} />} />
+        <Route path="/"        element={<LandingPage   theme={theme} toggleTheme={toggleTheme} />} />
+        <Route path="/app"     element={<AssistantPage theme={theme} toggleTheme={toggleTheme} />} />
+        <Route path="/analyze" element={<AnalyzePage   theme={theme} toggleTheme={toggleTheme} />} />
       </Routes>
     </BrowserRouter>
   );

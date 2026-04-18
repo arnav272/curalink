@@ -96,6 +96,7 @@ const LandingPage = ({ theme, toggleTheme }) => {
             <button className="nav-link" onClick={() => scrollTo(faqRef)}>FAQs</button>
             <button className="nav-link" onClick={() => scrollTo(feedbackRef)}>Feedback</button>
             <button className="nav-link" onClick={() => scrollTo(footerRef)}>About</button>
+            <button className="nav-link" onClick={() => navigate('/analyze')} style={{ color: 'var(--teal)', fontWeight: 500 }}>Lab Analyzer</button>
           </div>
         </div>
         <div className="nav-right">
@@ -222,6 +223,78 @@ const LandingPage = ({ theme, toggleTheme }) => {
                 <p className="feat-desc">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Lab Report Analyzer section ─────────────────────────────────── */}
+      <section className="section" style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+            {/* Left: text */}
+            <div className="reveal">
+              <span className="section-kicker">New Feature</span>
+              <h2 className="section-title" style={{ marginBottom: 16 }}>Lab Report Analyzer</h2>
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.75, marginBottom: 24 }}>
+                Upload your medical lab reports and get comprehensive AI-powered analysis — abnormal value detection, health implications, and personalized next-step recommendations. Instant, structured, and easy to understand.
+              </p>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
+                {[
+                  'Identifies abnormal values with severity ratings',
+                  'Explains health implications in plain language',
+                  'Recommends specialist referrals and follow-up tests',
+                  'Supports PDF, images, and direct text paste',
+                ].map((item, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: 'var(--text-secondary)' }}>
+                    <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--teal-light)', color: 'var(--teal)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                className="btn btn-primary"
+                onClick={() => navigate('/analyze')}
+                style={{ fontSize: 15, padding: '12px 28px', borderRadius: 12 }}
+              >
+                Try Lab Analyzer →
+              </button>
+            </div>
+
+            {/* Right: preview card */}
+            <div className="reveal reveal-d2">
+              <div style={{
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)',
+              }}>
+                {/* Mock topbar */}
+                <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 6 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#ef4444' }} />
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#f59e0b' }} />
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#10b981' }} />
+                  <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-muted)' }}>Lab Report Analysis</span>
+                </div>
+                <div style={{ padding: 20 }}>
+                  {/* Abnormal value row */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Abnormal Values</div>
+                  {[
+                    { name: 'Hemoglobin', val: '9.2 g/dL', range: '12–17.5', sev: 'Moderate', sevBg: '#fef3c7', sevC: '#f59e0b' },
+                    { name: 'WBC',        val: '12,400/μL', range: '4,500–11,000', sev: 'Mild', sevBg: '#ccfbf1', sevC: '#0d9488' },
+                  ].map((row, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: 8, padding: '8px 12px', marginBottom: 6, gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>{row.name}</span>
+                      <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>{row.val}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.range}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: row.sevBg, color: row.sevC }}>{row.sev}</span>
+                    </div>
+                  ))}
+                  {/* Implication preview */}
+                  <div style={{ marginTop: 14, fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Health Implications</div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                    The low hemoglobin suggests mild anemia, which may cause fatigue and shortness of breath. Mildly elevated WBC may indicate an early immune response...
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

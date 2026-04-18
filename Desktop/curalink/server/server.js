@@ -31,6 +31,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/analyze', require('./routes/analyzeRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {

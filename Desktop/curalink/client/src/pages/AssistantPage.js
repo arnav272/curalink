@@ -154,6 +154,7 @@ const AssistantPage = ({ theme, toggleTheme }) => {
           </div>
         </div>
         <div className="app-nav-right">
+          <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate('/analyze')} style={{ color: 'var(--teal)', borderColor: 'var(--teal-mid)' }}>Lab Analyzer</button>
           <button className="btn btn-ghost btn-sm no-print" onClick={() => setShowFeedback(true)}>Feedback</button>
           <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
           <button className="btn btn-ghost btn-sm no-print" onClick={startNewSession}>New</button>
