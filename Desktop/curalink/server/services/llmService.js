@@ -89,14 +89,21 @@ const callOllama = async (systemPrompt, userMessage) => {
   return response.data?.message?.content || 'No response generated';
 };
 
-// ── Hugging Face ──────────────────────────────────────────────────────────────
+// ── Hugging Face (FIXED) ──────────────────────────────────────────────────────
 const callHuggingFace = async (systemPrompt, userMessage) => {
-  const prompt = `<s>[INST] <<SYS>>\n${systemPrompt}\n<</SYS>>\n\n${userMessage} [/INST]`;
+  // Combine system prompt and user message into one prompt
+  const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
+  
   const response = await axios.post(
     process.env.HF_MODEL_URL,
     {
-      inputs: prompt,
-      parameters: { max_new_tokens: 2000, temperature: 0.2, return_full_text: false },
+      inputs: fullPrompt,
+      parameters: {
+        max_new_tokens: 2000,
+        temperature: 0.2,
+        do_sample: true,
+        return_full_text: false
+      },
     },
     {
       headers: {
@@ -106,7 +113,20 @@ const callHuggingFace = async (systemPrompt, userMessage) => {
       timeout: 120000,
     }
   );
-  return response.data?.[0]?.generated_text || 'No response generated';
+  
+  // Handle different response formats
+  let generatedText = '';
+  if (response.data && Array.isArray(response.data) && response.data[0]?.generated_text) {
+    generatedText = response.data[0].generated_text;
+  } else if (response.data?.generated_text) {
+    generatedText = response.data.generated_text;
+  } else if (typeof response.data === 'string') {
+    generatedText = response.data;
+  } else {
+    generatedText = 'No response generated';
+  }
+  
+  return generatedText;
 };
 
 // ── Main export ───────────────────────────────────────────────────────────────
